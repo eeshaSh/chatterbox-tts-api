@@ -37,8 +37,7 @@ SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
 DEFAULT_T3_PARAMS = {
     "initial_forward_pass_backend": "eager",
-    "generate_token_backend": "inductor-strided",
-    "stride_length": 2,
+    "generate_token_backend": "eager",
     "skip_when_1": True,
 }
 
@@ -53,7 +52,7 @@ def _run_model_generate(model, generate_kwargs: Dict[str, Any], context: str, t3
     kwargs = dict(generate_kwargs)
     kwargs["t3_params"] = t3_params
 
-    result = model.generate(**kwargs)
+    result = model.generate(max_new_tokens = 400, max_cache_len=900, **kwargs)
     return result
 
 
@@ -173,6 +172,9 @@ async def generate_speech_internal(
     """Internal function to generate speech with given parameters"""
     global REQUEST_COUNTER
     REQUEST_COUNTER += 1
+
+    # HARDCODING TO 0
+    cfg_weight = 0.0
     
     # Start TTS request tracking
     voice_source = "uploaded file" if voice_sample_path != Config.VOICE_SAMPLE_PATH else "default"

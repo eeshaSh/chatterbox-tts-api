@@ -36,9 +36,9 @@ REQUEST_COUNTER = 0
 SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
 DEFAULT_T3_PARAMS = {
-    "initial_forward_pass_backend": "cudagraphs",
+    "initial_forward_pass_backend": "inductor",
     "generate_token_backend": "cudagraphs-strided",
-    "stride_length": 4,
+    "stride_length": 2,
     "skip_when_1": True,
 }
 

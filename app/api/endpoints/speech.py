@@ -37,8 +37,7 @@ SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
 DEFAULT_T3_PARAMS = {
     "initial_forward_pass_backend": "inductor",
-    "generate_token_backend": "cudagraphs-strided",
-    "stride_length": 2,
+    "generate_token_backend": "inductor",
     "skip_when_1": True,
 }
 

@@ -253,16 +253,30 @@ async def generate_speech_internal(
                 # Add language_id for multilingual models
                 if is_multilingual():
                     generate_kwargs["language_id"] = language_id
+
+                def generate_with_mark_step():
+                    torch.compiler.cudagraph_mark_step_begin()
+                    return model.generate(
+                        t3_params={
+                            "initial_forward_pass_backend": "cudagraphs",
+                            "generate_token_backend": "cudagraphs-strided",
+                            "stride_length": 2,
+                            "skip_when_1": True,
+                        }, 
+                        **generate_kwargs
+                    )
+
+                audio_tensor = await loop.run_in_executor(None, generate_with_mark_step)
                 
-                audio_tensor = await loop.run_in_executor(
-                    None,
-                    lambda: model.generate(t3_params={
-                        "initial_forward_pass_backend": "cudagraphs",
-                        "generate_token_backend": "cudagraphs-manual",
-                        # "stride_length": 2,
-                        "skip_when_1": True,
-                    }, **generate_kwargs)
-                )
+                # audio_tensor = await loop.run_in_executor(
+                #     None,
+                #     lambda: model.generate(t3_params={
+                #         "initial_forward_pass_backend": "cudagraphs",
+                #         "generate_token_backend": "cudagraphs-strided",
+                #         "stride_length": 2,
+                #         "skip_when_1": True,
+                #     }, **generate_kwargs)
+                # )
                 
                 # Ensure tensor is on the correct device and detached
                 if hasattr(audio_tensor, 'detach'):

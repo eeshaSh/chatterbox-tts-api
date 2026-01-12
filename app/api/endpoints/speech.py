@@ -35,12 +35,25 @@ REQUEST_COUNTER = 0
 # Supported audio formats for voice uploads
 SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
-DEFAULT_T3_PARAMS = {
+T3_PARAMS_CUDAGRAPHS = {
     "initial_forward_pass_backend": "cudagraphs",
     "generate_token_backend": "cudagraphs-strided",
     "stride_length": 2,
     "skip_when_1": True,
 }
+T3_PARAMS_EAGER = {
+    "initial_forward_pass_backend": "eager",
+    "generate_token_backend": "eager",
+}
+DISABLE_T3_CUDAGRAPHS = os.getenv("DISABLE_T3_CUDAGRAPHS", "").lower() in ("1", "true", "yes")
+DEFAULT_T3_PARAMS = T3_PARAMS_EAGER if DISABLE_T3_CUDAGRAPHS else T3_PARAMS_CUDAGRAPHS
+
+
+def _is_cudagraph_params(params: Optional[Dict[str, Any]]) -> bool:
+    """Check whether T3 params are using cudagraph backends."""
+    if not params:
+        return False
+    return params.get("initial_forward_pass_backend") == "cudagraphs"
 
 
 def _mark_cudagraph_step(context: str) -> bool:
@@ -68,18 +81,48 @@ def _run_model_generate(model, generate_kwargs: Dict[str, Any], context: str, t3
     and clones the output tensor to avoid CUDAGraph buffer reuse.
     """
     kwargs = dict(generate_kwargs)
+    is_cudagraph = _is_cudagraph_params(t3_params)
     if t3_params is not None:
         kwargs["t3_params"] = t3_params
         print(f"🎯 [{context}] Invoking model.generate with T3 params: {t3_params}")
     else:
         print(f"🎯 [{context}] Invoking model.generate with default backend params")
 
-    _mark_cudagraph_step(context)
-    result = model.generate(**kwargs)
+    # Only mark steps when we are explicitly using cudagraphs
+    if is_cudagraph:
+        _mark_cudagraph_step(context)
+    else:
+        print(f"ℹ️ [{context}] Skipping cudagraph_mark_step_begin (non-cudagraph backend)")
 
-    if hasattr(result, "detach"):
-        result = result.detach().clone()
-        print(f"🧪 [{context}] Detached and cloned audio tensor to avoid graph buffer reuse")
+    try:
+        result = model.generate(**kwargs)
+    except Exception as err:
+        if is_cudagraph and not DISABLE_T3_CUDAGRAPHS:
+            print(f"💥 [{context}] CUDAGraph generate failed: {err}. Retrying with eager backend.")
+            fallback_params = T3_PARAMS_EAGER
+            return _run_model_generate(
+                model,
+                generate_kwargs,
+                context=f"{context} (fallback-eager)",
+                t3_params=fallback_params
+            )
+        raise
+
+    # Force a clone outside the graphed region to avoid buffer reuse
+    cloned = False
+    try:
+        if hasattr(result, "detach"):
+            result = result.detach()
+        if hasattr(result, "clone"):
+            result = result.clone()
+            cloned = True
+    except Exception as clone_err:
+        print(f"⚠️ [{context}] Failed to clone result tensor: {clone_err}")
+
+    if cloned:
+        print(f"🧪 [{context}] Cloned audio tensor to avoid CUDAGraph buffer reuse")
+    else:
+        print(f"⚠️ [{context}] Result did not expose clone(); returning as-is")
 
     return result
 

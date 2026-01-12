@@ -60,40 +60,56 @@ def _mark_cudagraph_step(context: str) -> bool:
     return mark_step_available
 
 
-_CACHE_PATCHED = False
+# _CACHE_PATCHED = False
 
 
-def _ensure_cache_patch():
-    """
-    Clone transformer cache key/value tensors before index_copy_ to avoid CUDAGraph buffer reuse.
-    This runs once and is intentionally minimal to keep performance overhead low.
-    """
-    global _CACHE_PATCHED
-    if _CACHE_PATCHED:
-        return
-    try:
-        from transformers.cache_utils import StaticCache
-    except Exception as err:
-        # Don't spam logs on repeated attempts; mark as patched to avoid log noise.
-        _CACHE_PATCHED = True
-        print(f"⚠️ [cache_patch] Unable to import transformers.cache_utils.StaticCache: {err}")
-        return
+# def _ensure_cache_patch():
+#     """
+#     Clone transformer cache key/value tensors before index_copy_ to avoid CUDAGraph buffer reuse.
+#     This runs once and is intentionally minimal to keep performance overhead low.
+#     """
+#     global _CACHE_PATCHED
+#     if _CACHE_PATCHED:
+#         return
+#     try:
+#         from transformers.cache_utils import StaticCache
+#     except Exception as err:
+#         # Don't spam logs on repeated attempts; mark as patched to avoid log noise.
+#         _CACHE_PATCHED = True
+#         print(f"⚠️ [cache_patch] Unable to import transformers.cache_utils.StaticCache: {err}")
+#         return
 
-    original_update = StaticCache.update
+#     original_update = StaticCache.update
 
-    def update_with_clone(self, key_states, value_states, cache_kwargs=None):
-        try:
-            if hasattr(key_states, "clone"):
-                key_states = key_states.clone()
-            if hasattr(value_states, "clone"):
-                value_states = value_states.clone()
-        except Exception as clone_err:
-            print(f"⚠️ [cache_patch] Failed to clone K/V states: {clone_err}")
-        return original_update(self, key_states, value_states, cache_kwargs)
+#     def update_with_clone(self, key_states, value_states, cache_kwargs=None):
+#         try:
+#             if hasattr(key_states, "clone"):
+#                 key_states = key_states.clone()
+#             if hasattr(value_states, "clone"):
+#                 value_states = value_states.clone()
+#         except Exception as clone_err:
+#             print(f"⚠️ [cache_patch] Failed to clone K/V states: {clone_err}")
+#         return original_update(self, key_states, value_states, cache_kwargs)
 
-    StaticCache.update = update_with_clone
-    _CACHE_PATCHED = True
-    print("🔧 [cache_patch] Patched transformers.StaticCache.update to clone K/V states before index_copy_")
+#     StaticCache.update = update_with_clone
+#     _CACHE_PATCHED = True
+#     print("🔧 [cache_patch] Patched transformers.StaticCache.update to clone K/V states before index_copy_")
+
+from transformers.cache_utils import StaticCache
+
+# Save the version that T3 or the library is currently using
+original_update_logic = StaticCache.update
+
+def flexible_2026_patch(self, key_states, value_states, layer_idx=None, *args, **kwargs):
+    # This wrapper accepts ANY number of positional arguments (*args) 
+    # to satisfy the 5th argument passed by modern transformers.
+    
+    # We call the original update but safely pass through extra positional args
+    return original_update_logic(self, key_states, value_states, layer_idx, *args, **kwargs)
+
+# Forcefully apply the fix
+StaticCache.update = flexible_2026_patch
+print("✅ Applied global 2026 fix: StaticCache.update now accepts 5+ arguments.")
 
 
 def _run_model_generate(model, generate_kwargs: Dict[str, Any], context: str, t3_params: Optional[Dict[str, Any]] = None):
@@ -101,7 +117,7 @@ def _run_model_generate(model, generate_kwargs: Dict[str, Any], context: str, t3
     Centralized wrapper for model.generate that logs the backend path, marks CUDA graph steps,
     and clones the output tensor to avoid CUDAGraph buffer reuse.
     """
-    _ensure_cache_patch()
+    # _ensure_cache_patch()
 
     kwargs = dict(generate_kwargs)
     if t3_params is not None:
@@ -379,11 +395,6 @@ async def generate_speech_internal(
                 #         "skip_when_1": True,
                 #     }, **generate_kwargs)
                 # )
-                
-                # Ensure tensor is on the correct device and detached
-                if hasattr(audio_tensor, 'detach'):
-                    # Clone because CUDAGraph outputs share storage across replays
-                    audio_tensor = audio_tensor.detach().clone()
                 
                 audio_chunks.append(audio_tensor)
             

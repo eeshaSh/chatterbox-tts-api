@@ -256,7 +256,12 @@ async def generate_speech_internal(
                 
                 audio_tensor = await loop.run_in_executor(
                     None,
-                    lambda: model.generate(**generate_kwargs)
+                    lambda: model.generate(t3_params={
+                        "initial_forward_pass_backend": "cudagraphs",
+                        "generate_token_backend": "cudagraphs-strided",
+                        "stride_length": 2,
+                        "skip_when_1": True,
+                    }, **generate_kwargs)
                 )
                 
                 # Ensure tensor is on the correct device and detached

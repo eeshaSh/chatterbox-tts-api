@@ -111,7 +111,7 @@ async def initialize_model():
             _supported_languages = {"en": "English"}  # Standard model only supports English
             print(f"✓ Standard model initialized (English only)")
 
-        t3_to(_model, torch.bfloat16 if _device == "cuda" else torch.float32)
+        t3_to(_model, torch.bfloat16)
         
         _initialization_state = InitializationState.READY.value
         _initialization_progress = "Model ready"

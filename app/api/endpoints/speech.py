@@ -255,7 +255,9 @@ async def generate_speech_internal(
                     generate_kwargs["language_id"] = language_id
 
                 def generate_with_mark_step():
-                    torch.compiler.cudagraph_mark_step_begin()
+                    # Mark graph step boundaries to prevent CUDAGraph buffer reuse across calls
+                    if hasattr(torch, "compiler") and hasattr(torch.compiler, "cudagraph_mark_step_begin"):
+                        torch.compiler.cudagraph_mark_step_begin()
                     return model.generate(
                         t3_params={
                             "initial_forward_pass_backend": "cudagraphs",
@@ -280,7 +282,8 @@ async def generate_speech_internal(
                 
                 # Ensure tensor is on the correct device and detached
                 if hasattr(audio_tensor, 'detach'):
-                    audio_tensor = audio_tensor.detach()
+                    # Clone because CUDAGraph outputs share storage across replays
+                    audio_tensor = audio_tensor.detach().clone()
                 
                 audio_chunks.append(audio_tensor)
             

@@ -35,26 +35,6 @@ REQUEST_COUNTER = 0
 # Supported audio formats for voice uploads
 SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
-DEFAULT_T3_PARAMS = {
-    "initial_forward_pass_backend": "eager",
-    "generate_token_backend": "eager",
-    "skip_when_1": True,
-}
-
-
-def _run_model_generate(model, generate_kwargs: Dict[str, Any], context: str, t3_params: Optional[Dict[str, Any]] = None):
-    """
-    Centralized wrapper for model.generate that logs the backend path, marks CUDA graph steps,
-    and clones the output tensor to avoid CUDAGraph buffer reuse.
-    """
-    # _ensure_cache_patch()
-
-    kwargs = dict(generate_kwargs)
-    kwargs["t3_params"] = t3_params
-
-    result = model.generate(**kwargs)
-    return result
-
 
 def create_wav_header(sample_rate: int, channels: int, bits_per_sample: int, data_size: int = 0xFFFFFFFF) -> bytes:
     """Creates a WAV header for streaming."""
@@ -173,7 +153,6 @@ async def generate_speech_internal(
     global REQUEST_COUNTER
     REQUEST_COUNTER += 1
 
-    # HARDCODING TO 0
     cfg_weight = 0.0001
     
     # Start TTS request tracking
@@ -276,18 +255,15 @@ async def generate_speech_internal(
                 # Add language_id for multilingual models
                 if is_multilingual():
                     generate_kwargs["language_id"] = language_id
-
-                def generate_with_mark_step():
-                    context = f"standard chunk {i+1}/{len(chunks)}"
-                    return _run_model_generate(
-                        model,
-                        generate_kwargs,
-                        context=context,
-                        t3_params=DEFAULT_T3_PARAMS
-                    )
-
-                audio_tensor = await loop.run_in_executor(None, generate_with_mark_step)
-
+                
+                audio_tensor = await loop.run_in_executor(
+                    None,
+                    lambda: model.generate(**generate_kwargs)
+                )
+                
+                # Ensure tensor is on the correct device and detached
+                if hasattr(audio_tensor, 'detach'):
+                    audio_tensor = audio_tensor.detach()
                 
                 audio_chunks.append(audio_tensor)
             
@@ -510,23 +486,17 @@ async def generate_speech_streaming(
             # Use torch.no_grad() to prevent gradient accumulation
             with torch.no_grad():
                 # Run TTS generation in executor to avoid blocking
-                def generate_streaming_chunk():
-                    context = f"streaming chunk {i+1}/{len(chunks)}"
-                    return _run_model_generate(
-                        model,
-                        {
-                            "text": chunk,
-                            "audio_prompt_path": voice_sample_path,
-                            "exaggeration": exaggeration,
-                            "cfg_weight": cfg_weight,
-                            "temperature": temperature,
-                            **({'language_id': language_id} if is_multilingual() else {})
-                        },
-                        context=context,
-                        t3_params=DEFAULT_T3_PARAMS
+                audio_tensor = await loop.run_in_executor(
+                    None,
+                    lambda: model.generate(
+                        text=chunk,
+                        audio_prompt_path=voice_sample_path,
+                        exaggeration=exaggeration,
+                        cfg_weight=cfg_weight,
+                        temperature=temperature,
+                        **({'language_id': language_id} if is_multilingual() else {})
                     )
-
-                audio_tensor = await loop.run_in_executor(None, generate_streaming_chunk)
+                )
                 
                 # Ensure tensor is on CPU for streaming
                 if hasattr(audio_tensor, 'cpu'):
@@ -719,23 +689,17 @@ async def generate_speech_sse(
             # Use torch.no_grad() to prevent gradient accumulation
             with torch.no_grad():
                 # Run TTS generation in executor to avoid blocking
-                def generate_sse_chunk():
-                    context = f"SSE chunk {i+1}/{len(chunks)}"
-                    return _run_model_generate(
-                        model,
-                        {
-                            "text": chunk,
-                            "audio_prompt_path": voice_sample_path,
-                            "exaggeration": exaggeration,
-                            "cfg_weight": cfg_weight,
-                            "temperature": temperature,
-                            **({'language_id': language_id} if is_multilingual() else {})
-                        },
-                        context=context,
-                        t3_params=DEFAULT_T3_PARAMS
+                audio_tensor = await loop.run_in_executor(
+                    None,
+                    lambda: model.generate(
+                        text=chunk,
+                        audio_prompt_path=voice_sample_path,
+                        exaggeration=exaggeration,
+                        cfg_weight=cfg_weight,
+                        temperature=temperature,
+                        **({'language_id': language_id} if is_multilingual() else {})
                     )
-
-                audio_tensor = await loop.run_in_executor(None, generate_sse_chunk)
+                )
                 
                 # Ensure tensor is on CPU for processing
                 if hasattr(audio_tensor, 'cpu'):

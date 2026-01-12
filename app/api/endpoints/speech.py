@@ -174,7 +174,7 @@ async def generate_speech_internal(
     REQUEST_COUNTER += 1
 
     # HARDCODING TO 0
-    cfg_weight = 0.0
+    cfg_weight = 0.0001
     
     # Start TTS request tracking
     voice_source = "uploaded file" if voice_sample_path != Config.VOICE_SAMPLE_PATH else "default"

@@ -33,6 +33,12 @@ async def initialize_model():
     global _model, _device, _initialization_state, _initialization_error, _initialization_progress, _is_multilingual, _supported_languages
     
     try:
+        def t3_to(model: ChatterboxTTS, dtype):
+            model.t3.to(dtype=dtype)
+            model.conds.t3.to(dtype=dtype)
+            torch.cuda.empty_cache()
+            return model
+
         _initialization_state = InitializationState.INITIALIZING.value
         _initialization_progress = "Validating configuration..."
         
@@ -104,6 +110,8 @@ async def initialize_model():
             _is_multilingual = False
             _supported_languages = {"en": "English"}  # Standard model only supports English
             print(f"✓ Standard model initialized (English only)")
+
+        t3_to(_model, torch.bfloat16 if _device == "cuda" else torch.float32)
         
         _initialization_state = InitializationState.READY.value
         _initialization_progress = "Model ready"

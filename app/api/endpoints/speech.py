@@ -37,7 +37,8 @@ SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
 DEFAULT_T3_PARAMS = {
     "initial_forward_pass_backend": "eager",
-    "generate_token_backend": "inductor",
+    "generate_token_backend": "inductor-strided",
+    "stride_length": 2,
     "skip_when_1": True,
 }
 

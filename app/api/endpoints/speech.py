@@ -52,7 +52,7 @@ def _run_model_generate(model, generate_kwargs: Dict[str, Any], context: str, t3
     kwargs = dict(generate_kwargs)
     kwargs["t3_params"] = t3_params
 
-    result = model.generate(max_new_tokens = 400, max_cache_len=900, **kwargs)
+    result = model.generate(**kwargs)
     return result
 
 

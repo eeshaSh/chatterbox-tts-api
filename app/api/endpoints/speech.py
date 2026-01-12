@@ -258,8 +258,8 @@ async def generate_speech_internal(
                     None,
                     lambda: model.generate(t3_params={
                         "initial_forward_pass_backend": "cudagraphs",
-                        "generate_token_backend": "cudagraphs-strided",
-                        "stride_length": 2,
+                        "generate_token_backend": "cudagraphs-manual",
+                        # "stride_length": 2,
                         "skip_when_1": True,
                     }, **generate_kwargs)
                 )

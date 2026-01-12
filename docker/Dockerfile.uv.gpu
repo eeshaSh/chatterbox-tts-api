@@ -47,7 +47,7 @@ RUN uv pip install setuptools fastapi uvicorn[standard] python-dotenv python-mul
 
 # Install chatterbox-tts — with the breaking fix (pkuseg package exclusion) 
 # RUN uv pip install git+https://github.com/rsxdalv/chatterbox.git@faster
-RUN pip install git+https://github.com/travisvn/chatterbox-multilingual.git@exp
+RUN uv pip install git+https://github.com/travisvn/chatterbox-multilingual.git@exp
 
 # Copy application code
 COPY app/ ./app/

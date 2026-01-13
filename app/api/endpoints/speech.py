@@ -259,7 +259,7 @@ async def generate_speech_internal(
                 audio_tensor = await loop.run_in_executor(
                     None,
                     lambda: model.generate(
-                        ts_params = {
+                        t3_params = {
                             # "initial_forward_pass_backend": "eager", # slower - default
                             "initial_forward_pass_backend": "cudagraphs", # speeds up set up
 

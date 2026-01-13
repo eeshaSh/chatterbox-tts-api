@@ -38,6 +38,29 @@ async def initialize_model():
             model.conds.t3.to(dtype=dtype)
             torch.cuda.empty_cache()
             return model
+        
+        def optimize_model(model: ChatterboxTTS):
+                # 1. Move both T3 and S3 to bfloat16
+                model.t3.to(dtype=torch.bfloat16)
+                model.conds.t3.to(dtype=torch.bfloat16)
+                model.s3.to(dtype=torch.bfloat16)  # Add S3 optimization
+                
+                # 2. Pre-compile CUDA graphs for common operations
+                if hasattr(torch, 'cuda') and torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    # Enable CUDA graphs if available
+                    torch._inductor.config.triton.cudagraphs = True
+                    
+                # 3. Set model to eval mode explicitly
+                model.t3.eval()
+                model.s3.eval()
+                
+                # 4. Optimize memory usage
+                if hasattr(torch, 'cuda') and torch.cuda.is_available():
+                    # Increase GPU memory fraction
+                    torch.cuda.set_per_process_memory_fraction(0.9)
+                    
+                return model
 
         _initialization_state = InitializationState.INITIALIZING.value
         _initialization_progress = "Validating configuration..."
@@ -111,7 +134,8 @@ async def initialize_model():
             _supported_languages = {"en": "English"}  # Standard model only supports English
             print(f"✓ Standard model initialized (English only)")
 
-        t3_to(_model, torch.bfloat16)
+        # t3_to(_model, torch.bfloat16)
+        _model = optimize_model(_model)
         
         _initialization_state = InitializationState.READY.value
         _initialization_progress = "Model ready"

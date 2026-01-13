@@ -40,7 +40,17 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 # Install PyTorch with CUDA support using uv
-RUN uv pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+# RUN uv pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+# TODO put this in a requirements file
+# Install the exact CUDA‑12.4 wheels
+RUN uv pip install \
+    torch==2.6.0+cu124 \
+    torchvision==0.21.0+cu124 \
+    torchaudio==2.6.0+cu124 \
+    --index-url https://download.pytorch.org/whl/cu124
+# Transformers ≥ 4.41.0 and Accelerate ≥ 0.30.0 contain the clone‑cache fix
+RUN uv pip install "transformers>=4.41.0" "accelerate>=0.30.0"
+RUN uv pip install "bitsandbytes>=0.43.0"
 
 # Install base dependencies first
 RUN uv pip install setuptools fastapi uvicorn[standard] python-dotenv python-multipart requests psutil pydub sse-starlette

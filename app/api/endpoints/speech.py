@@ -259,7 +259,7 @@ async def generate_speech_internal(
                 audio_tensor = await loop.run_in_executor(
                     None,
                     lambda: 
-                        # torch.compiler.cudagraph_mark_step_begin(), 
+                        torch.compiler.cudagraph_mark_step_begin(), 
                         model.generate(
                         t3_params = {
                         #     # "initial_forward_pass_backend": "eager", # slower - default

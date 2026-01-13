@@ -38,6 +38,7 @@ RUN uv venv --python 3.11
 # Activate the virtual environment for subsequent RUN commands
 ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV TORCHINDUCTOR_MAX_BLOCK_SIZE=64
 
 # Install PyTorch with CUDA support using uv
 # RUN uv pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
@@ -67,8 +68,6 @@ RUN cd /opt/flash-attn && \
 # Transformers ≥ 4.41.0 and Accelerate ≥ 0.30.0 contain the clone‑cache fix
 RUN uv pip install "transformers>=4.41.0" "accelerate>=0.30.0"
 RUN uv pip install "bitsandbytes>=0.43.0"
-
-ENV TORCHINDUCTOR_MAX_BLOCK_SIZE=64   # keeps the autotuner from picking a block that exceeds shared memory
 
 # Install base dependencies first
 RUN uv pip install setuptools fastapi uvicorn[standard] python-dotenv python-multipart requests psutil pydub sse-starlette

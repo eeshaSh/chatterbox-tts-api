@@ -274,7 +274,7 @@ async def generate_speech_internal(
                             "stride_length": 4, # "strided" options compile <1-2-3-4> iteration steps together, which improves performance by reducing memory copying issues in torch.compile
                             "skip_when_1": True, # skips Top P when it's set to 1.0
                             # "benchmark_t3": True, # Synchronizes CUDA to get the real it/s 
-                        }
+                        },
                         **generate_kwargs)
                 )
                 

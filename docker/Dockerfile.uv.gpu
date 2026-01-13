@@ -1,5 +1,5 @@
 # Use NVIDIA CUDA runtime as base for better GPU support
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+FROM nvidia/cuda:13.0.0-runtime-ubuntu22.04
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -53,18 +53,10 @@ ENV TORCHINDUCTOR_MAX_BLOCK_SIZE=64
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git build-essential cmake ninja-build && \
     rm -rf /var/lib/apt/lists/*
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install torch==2.7.1+cu128 \
-                torchvision==0.18.1+cu128 \
-                torchaudio==2.7.1+cu128 \
-    -f https://download.pytorch.org/whl/torch_stable.html
-RUN git clone https://github.com/Dao-AILab/flash-attention.git /opt/flash-attn && \
-    cd /opt/flash-attn && \
-    git checkout v2.5.8 &&
-RUN cd /opt/flash-attn && \
-    python setup.py install && \
-    # clean up to keep the image small
-    cd / && rm -rf /opt/flash-attn
+RUN uv pip install --upgrade pip setuptools wheel && \
+    uv pip install torch==2.9.0 torchvision==0.24.0 torchaudio==2.9.0 --index-url https://download.pytorch.org/whl/cu130
+
+
 # Transformers ≥ 4.41.0 and Accelerate ≥ 0.30.0 contain the clone‑cache fix
 RUN uv pip install "transformers>=4.41.0" "accelerate>=0.30.0"
 RUN uv pip install "bitsandbytes>=0.43.0"
@@ -88,7 +80,7 @@ COPY voice-sample.mp3 ./voice-sample.mp3
 # Create directories for model cache, voice library, and long text data (separate from source code)
 RUN mkdir -p /cache /voices /data/long_text_jobs
 
-# Set default environment variables (prefer CUDA)
+# Set default environment variables (prefer CUDA
 ENV PORT=4123
 ENV EXAGGERATION=0.5
 ENV CFG_WEIGHT=0.5
@@ -121,4 +113,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5m --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
 # Run the application using the virtual environment Python
-CMD ["/app/.venv/bin/python", "main.py"] 
+CMD ["/app/.venv/bin/python", "main.py"]                                                 

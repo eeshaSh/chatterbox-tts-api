@@ -258,7 +258,9 @@ async def generate_speech_internal(
                 
                 audio_tensor = await loop.run_in_executor(
                     None,
-                    lambda: model.generate(
+                    lambda: (
+                        torch.compiler.cudagraph_mark_step_begin(), 
+                        model.generate(
                         t3_params = {
                             # "initial_forward_pass_backend": "eager", # slower - default
                             "initial_forward_pass_backend": "cudagraphs", # speeds up set up
@@ -273,7 +275,7 @@ async def generate_speech_internal(
                             # "skip_when_1": True, # skips Top P when it's set to 1.0
                             # "benchmark_t3": True, # Synchronizes CUDA to get the real it/s 
                         }
-                        ,**generate_kwargs)
+                        ,**generate_kwargs))[1]
                 )
                 
                 # Ensure tensor is on the correct device and detached

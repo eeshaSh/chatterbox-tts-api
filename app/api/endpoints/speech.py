@@ -8,6 +8,7 @@ import asyncio
 import tempfile
 import torch
 import torchaudio as ta
+import soundfile as sf
 import base64
 import json
 import struct
@@ -34,7 +35,6 @@ REQUEST_COUNTER = 0
 
 # Supported audio formats for voice uploads
 SUPPORTED_AUDIO_FORMATS = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
-
 
 def create_wav_header(sample_rate: int, channels: int, bits_per_sample: int, data_size: int = 0xFFFFFFFF) -> bytes:
     """Creates a WAV header for streaming."""
@@ -304,15 +304,19 @@ async def generate_speech_internal(
         update_tts_status(request_id, TTSStatus.FINALIZING, "Converting to WAV format")
         buffer = io.BytesIO()
         
-        # Ensure final_audio is on CPU for saving
-        if hasattr(final_audio, 'cpu'):
-            final_audio_cpu = final_audio.cpu()
-        else:
-            final_audio_cpu = final_audio
+        # # Ensure final_audio is on CPU for saving
+        # if hasattr(final_audio, 'cpu'):
+        #     final_audio_cpu = final_audio.cpu()
+        # else:
+        #     final_audio_cpu = final_audio
             
-        ta.save(buffer, final_audio_cpu, model.sr, format="wav")
+        # ta.save(buffer, final_audio_cpu, model.sr, format="wav")
+        audio_np = final_audio_cpu.numpy()
+        if audio_np.ndim == 2:
+            audio_np = audio_np.T  # soundfile expects (samples, channels)
+        sf.write(buffer, audio_np, samplerate=model.sr, format="WAV")
         buffer.seek(0)
-        
+                
         # Mark as completed
         update_tts_status(request_id, TTSStatus.COMPLETED, "Audio generation completed")
         print(f"✓ Audio generation completed. Size: {len(buffer.getvalue()):,} bytes")

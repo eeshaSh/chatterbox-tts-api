@@ -305,10 +305,10 @@ async def generate_speech_internal(
         buffer = io.BytesIO()
         
         # # Ensure final_audio is on CPU for saving
-        # if hasattr(final_audio, 'cpu'):
-        #     final_audio_cpu = final_audio.cpu()
-        # else:
-        #     final_audio_cpu = final_audio
+        if hasattr(final_audio, 'cpu'):
+            final_audio_cpu = final_audio.cpu()
+        else:
+            final_audio_cpu = final_audio
             
         # ta.save(buffer, final_audio_cpu, model.sr, format="wav")
         audio_np = final_audio_cpu.numpy()

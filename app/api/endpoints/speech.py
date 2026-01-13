@@ -270,8 +270,8 @@ async def generate_speech_internal(
                         #     # "generate_token_backend": "eager",
                         #     # "generate_token_backend": "inductor",
                         #     # "generate_token_backend": "inductor-strided",
-                            "generate_token_backend": "cudagraphs-strided",
-                            "stride_length": 4, # "strided" options compile <1-2-3-4> iteration steps together, which improves performance by reducing memory copying issues in torch.compile
+                            "generate_token_backend": "cudagraphs",
+                            # "stride_length": 4, # "strided" options compile <1-2-3-4> iteration steps together, which improves performance by reducing memory copying issues in torch.compile
                             "skip_when_1": True, # skips Top P when it's set to 1.0
                             # "benchmark_t3": True, # Synchronizes CUDA to get the real it/s 
                         },

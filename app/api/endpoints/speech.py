@@ -257,24 +257,24 @@ async def generate_speech_internal(
                     generate_kwargs["language_id"] = language_id
                 
                 def _generate_audio():
-                    torch.compiler.cudagraph_mark_step_begin()
+                    # torch.compiler.cudagraph_mark_step_begin()
                     return model.generate(
-                        t3_params={
-                            # "initial_forward_pass_backend": "eager", # slower - default
-                            # "initial_forward_pass_backend": "cudagraphS", # speeds up set up
-                            "initial_forward_pass_backend": "cudagraphs-manual", # speeds up set up
+                        # t3_params={
+                        #     # "initial_forward_pass_backend": "eager", # slower - default
+                        #     # "initial_forward_pass_backend": "cudagraphS", # speeds up set up
+                        #     "initial_forward_pass_backend": "cudagraphs-manual", # speeds up set up
 
 
-                            "generate_token_backend": "cudagraphs-manual", # fastest - default
-                            # "generate_token_backend": "cudagraphs",
-                            # "generate_token_backend": "eager",
-                            # "generate_token_backend": "inductor",
-                            # "generate_token_backend": "inductor-strided",
-                            # "generate_token_backend": "inductor",
-                            # "stride_length": 4, # "strided" options compile <1-2-3-4> iteration steps together, which improves performance by reducing memory copying issues in torch.compile
-                            "skip_when_1": True, # skips Top P when it's set to 1.0
-                            # "benchmark_t3": True, # Synchronizes CUDA to get the real it/s 
-                        },
+                        #     "generate_token_backend": "cudagraphs-manual", # fastest - default
+                        #     # "generate_token_backend": "cudagraphs",
+                        #     # "generate_token_backend": "eager",
+                        #     # "generate_token_backend": "inductor",
+                        #     # "generate_token_backend": "inductor-strided",
+                        #     # "generate_token_backend": "inductor",
+                        #     # "stride_length": 4, # "strided" options compile <1-2-3-4> iteration steps together, which improves performance by reducing memory copying issues in torch.compile
+                        #     "skip_when_1": True, # skips Top P when it's set to 1.0
+                        #     # "benchmark_t3": True, # Synchronizes CUDA to get the real it/s 
+                        # },
                         **generate_kwargs
                     )
 

@@ -159,7 +159,7 @@ async def initialize_model():
 
         # t3_to(_model, torch.bfloat16)
         _model = optimize_model(_model)
-        # _model = quantize_model(_model)
+        _model = quantize_model(_model)
         
         _initialization_state = InitializationState.READY.value
         _initialization_progress = "Model ready"

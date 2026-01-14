@@ -11,6 +11,11 @@ from chatterbox.mtl_tts import ChatterboxMultilingualTTS
 from chatterbox.tts_turbo import ChatterboxTurboTTS
 from app.core.mtl import SUPPORTED_LANGUAGES
 from app.config import Config, detect_device
+import huggingface_hub
+
+HUGGINGFACE_TOKEN = os.getenv("HUGGINGFACE_TOKEN", "")
+if HUGGINGFACE_TOKEN:
+    huggingface_hub.login(token=HUGGINGFACE_TOKEN)
 
 # Global model instance
 _model = None
@@ -161,6 +166,7 @@ async def initialize_model():
             #     None, 
             #     lambda: ChatterboxMultilingualTTS.from_pretrained(device=_device)
             # )
+            huggingface_hub.login(token=HUGGINGFACE_TOKEN)  # Replace with your actual token or use environment variable
             _model = await loop.run_in_executor(
                 None, 
                 lambda: ChatterboxTurboTTS.from_pretrained(device=_device)

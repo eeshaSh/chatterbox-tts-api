@@ -56,12 +56,12 @@ async def initialize_model():
                 dtype=torch.qint8
             )
             
-            # Quantize S3 model to INT8
-            model.s3 = quantize_dynamic(
-                model.s3,
-                {torch.nn.Linear},
-                dtype=torch.qint8
-            )
+            # # Quantize S3 model to INT8
+            # model.s3 = quantize_dynamic(
+            #     model.s3,
+            #     {torch.nn.Linear},
+            #     dtype=torch.qint8
+            # )
             
             # Force contiguous memory layout
             for param in model.parameters():

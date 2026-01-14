@@ -46,29 +46,29 @@ async def initialize_model():
             torch.cuda.empty_cache()
             return model
         
-        # import torch
-        # from torch.ao.quantization import quantize_dynamic
-        # def quantize_model(model: ChatterboxTTS):
-        #     # Placeholder for quantization logic if needed in future
-        #     model.t3 = quantize_dynamic(
-        #         model.t3, 
-        #         {torch.nn.Linear}, 
-        #         dtype=torch.qint8
-        #     )
+        import torch
+        from torch.ao.quantization import quantize_dynamic
+        def quantize_model(model: ChatterboxTTS):
+            # Placeholder for quantization logic if needed in future
+            model.t3 = quantize_dynamic(
+                model.t3, 
+                {torch.nn.Linear}, 
+                dtype=torch.qint8
+            )
             
-        #     # Quantize S3 model to INT8
-        #     model.s3 = quantize_dynamic(
-        #         model.s3,
-        #         {torch.nn.Linear},
-        #         dtype=torch.qint8
-        #     )
+            # Quantize S3 model to INT8
+            model.s3 = quantize_dynamic(
+                model.s3,
+                {torch.nn.Linear},
+                dtype=torch.qint8
+            )
             
-        #     # Force contiguous memory layout
-        #     for param in model.parameters():
-        #         if param.data.is_cuda:
-        #             param.data = param.data.contiguous()
+            # Force contiguous memory layout
+            for param in model.parameters():
+                if param.data.is_cuda:
+                    param.data = param.data.contiguous()
             
-        #     return model
+            return model
         
         def optimize_model(model: ChatterboxTTS):
             import torch
@@ -188,7 +188,7 @@ async def initialize_model():
         # t3_to(_model, torch.bfloat16)
         _model = optimize_model(_model)
         print("Model has been optimized for performance!")
-        # _model = quantize_model(_model)
+        _model = quantize_model(_model)
         
         _initialization_state = InitializationState.READY.value
         _initialization_progress = "Model ready"

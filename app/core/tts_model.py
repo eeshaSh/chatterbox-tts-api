@@ -64,14 +64,15 @@ async def initialize_model():
             return model
         
         def optimize_model(model: ChatterboxTTS):
+            import torch
             print("[optimize_model] Starting optimization...")
             # 1. Move both T3 and S3 to bfloat16
             print("[optimize_model] Moving model.t3 to bfloat16...")
             model.t3.to(dtype=torch.bfloat16)
             print("[optimize_model] Moving model.conds.t3 to bfloat16...")
             model.conds.t3.to(dtype=torch.bfloat16)
-            print("[optimize_model] Moving model.s3 to bfloat16...")
-            model.s3.to(dtype=torch.bfloat16)  # Add S3 optimization
+            # print("[optimize_model] Moving model.s3 to bfloat16...")
+            # model.s3.to(dtype=torch.bfloat16)  # Add S3 optimization
 
             # 2. Pre-compile CUDA graphs for common operations
             print("[optimize_model] Checking for CUDA availability...")
@@ -86,8 +87,8 @@ async def initialize_model():
             # 3. Set model to eval mode explicitly
             print("[optimize_model] Setting model.t3 to eval mode...")
             model.t3.eval()
-            print("[optimize_model] Setting model.s3 to eval mode...")
-            model.s3.eval()
+            # print("[optimize_model] Setting model.s3 to eval mode...")
+            # model.s3.eval()
 
             # 4. Optimize memory usage
             print("[optimize_model] Checking for CUDA memory optimization...")

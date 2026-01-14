@@ -5,6 +5,7 @@ Text-to-speech endpoint
 import io
 import os
 import asyncio
+import datetime
 import tempfile
 import torch
 import torchaudio as ta
@@ -237,7 +238,7 @@ async def generate_speech_internal(
             current_step = f"Generating audio for chunk {i+1}/{len(chunks)}"
             update_tts_status(request_id, TTSStatus.GENERATING_AUDIO, current_step, 
                             current_chunk=i+1, total_chunks=len(chunks))
-            
+            print(f"🕒 Generation timestamp: {datetime.datetime.utcnow().isoformat()}Z")
             print(f"Generating audio for chunk {i+1}/{len(chunks)}: '{chunk[:50]}{'...' if len(chunk) > 50 else ''}'")
             
             # Use torch.no_grad() to prevent gradient accumulation
@@ -321,6 +322,7 @@ async def generate_speech_internal(
                 
         # Mark as completed
         update_tts_status(request_id, TTSStatus.COMPLETED, "Audio generation completed")
+        print(f"🕒 Generation timestamp: {datetime.datetime.utcnow().isoformat()}Z")
         print(f"✓ Audio generation completed. Size: {len(buffer.getvalue()):,} bytes")
         
         return buffer

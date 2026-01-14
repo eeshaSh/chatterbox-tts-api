@@ -34,30 +34,6 @@ class InitializationState(Enum):
     ERROR = "error"
 
 
-import torch
-from torch.ao.quantization import quantize_dynamic
-def quantize_model(model: ChatterboxTTS):
-    # Placeholder for quantization logic if needed in future
-    model.t3 = quantize_dynamic(
-        model.t3, 
-        {torch.nn.Linear}, 
-        dtype=torch.qint8
-    )
-    
-    # Quantize S3 model to INT8
-    model.s3 = quantize_dynamic(
-        model.s3,
-        {torch.nn.Linear},
-        dtype=torch.qint8
-    )
-    
-    # Force contiguous memory layout
-    for param in model.parameters():
-        if param.data.is_cuda:
-            param.data = param.data.contiguous()
-    
-    return model
-
 
 async def initialize_model():
     """Initialize the Chatterbox TTS model"""
@@ -68,6 +44,30 @@ async def initialize_model():
             model.t3.to(dtype=dtype)
             model.conds.t3.to(dtype=dtype)
             torch.cuda.empty_cache()
+            return model
+        
+        import torch
+        from torch.ao.quantization import quantize_dynamic
+        def quantize_model(model: ChatterboxTTS):
+            # Placeholder for quantization logic if needed in future
+            model.t3 = quantize_dynamic(
+                model.t3, 
+                {torch.nn.Linear}, 
+                dtype=torch.qint8
+            )
+            
+            # Quantize S3 model to INT8
+            model.s3 = quantize_dynamic(
+                model.s3,
+                {torch.nn.Linear},
+                dtype=torch.qint8
+            )
+            
+            # Force contiguous memory layout
+            for param in model.parameters():
+                if param.data.is_cuda:
+                    param.data = param.data.contiguous()
+            
             return model
         
         def optimize_model(model: ChatterboxTTS):

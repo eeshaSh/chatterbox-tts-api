@@ -246,7 +246,7 @@ async def generate_speech_internal(
                 # Prepare generation kwargs
                 generate_kwargs = {
                     "text": chunk,
-                    "audio_prompt_path": voice_sample_path,
+                    "audio_prompt_path": None, # voice_sample_path,
                     "exaggeration": exaggeration,
                     "cfg_weight": cfg_weight,
                     "temperature": temperature

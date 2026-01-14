@@ -28,6 +28,30 @@ class InitializationState(Enum):
     ERROR = "error"
 
 
+# from torch.ao.quantization import quantize_dynamic
+# def quantize_model(model: ChatterboxTTS):
+#     # Placeholder for quantization logic if needed in future
+#     model.t3 = quantize_dynamic(
+#         model.t3, 
+#         {torch.nn.Linear}, 
+#         dtype=torch.qint8
+#     )
+    
+#     # Quantize S3 model to INT8
+#     model.s3 = quantize_dynamic(
+#         model.s3,
+#         {torch.nn.Linear},
+#         dtype=torch.qint8
+#     )
+    
+#     # Force contiguous memory layout
+#     for param in model.parameters():
+#         if param.data.is_cuda:
+#             param.data = param.data.contiguous()
+    
+#     return model
+
+
 async def initialize_model():
     """Initialize the Chatterbox TTS model"""
     global _model, _device, _initialization_state, _initialization_error, _initialization_progress, _is_multilingual, _supported_languages
@@ -40,51 +64,42 @@ async def initialize_model():
             return model
         
         def optimize_model(model: ChatterboxTTS):
-                # 1. Move both T3 and S3 to bfloat16
-                model.t3.to(dtype=torch.bfloat16)
-                model.conds.t3.to(dtype=torch.bfloat16)
-                model.s3.to(dtype=torch.bfloat16)  # Add S3 optimization
-                
-                # 2. Pre-compile CUDA graphs for common operations
-                if hasattr(torch, 'cuda') and torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                    # Enable CUDA graphs if available
-                    torch._inductor.config.triton.cudagraphs = True
-                    
-                # 3. Set model to eval mode explicitly
-                model.t3.eval()
-                model.s3.eval()
-                
-                # 4. Optimize memory usage
-                if hasattr(torch, 'cuda') and torch.cuda.is_available():
-                    # Increase GPU memory fraction
-                    torch.cuda.set_per_process_memory_fraction(0.9)
-                    
-                return model
-        
-        from torch.ao.quantization import quantize_dynamic
-        def quantize_model(model: ChatterboxTTS):
-            # Placeholder for quantization logic if needed in future
-            model.t3 = quantize_dynamic(
-                model.t3, 
-                {torch.nn.Linear}, 
-                dtype=torch.qint8
-            )
-            
-            # Quantize S3 model to INT8
-            model.s3 = quantize_dynamic(
-                model.s3,
-                {torch.nn.Linear},
-                dtype=torch.qint8
-            )
-            
-            # Force contiguous memory layout
-            for param in model.parameters():
-                if param.data.is_cuda:
-                    param.data = param.data.contiguous()
-            
-            return model
+            print("[optimize_model] Starting optimization...")
+            # 1. Move both T3 and S3 to bfloat16
+            print("[optimize_model] Moving model.t3 to bfloat16...")
+            model.t3.to(dtype=torch.bfloat16)
+            print("[optimize_model] Moving model.conds.t3 to bfloat16...")
+            model.conds.t3.to(dtype=torch.bfloat16)
+            print("[optimize_model] Moving model.s3 to bfloat16...")
+            model.s3.to(dtype=torch.bfloat16)  # Add S3 optimization
 
+            # 2. Pre-compile CUDA graphs for common operations
+            print("[optimize_model] Checking for CUDA availability...")
+            if hasattr(torch, 'cuda') and torch.cuda.is_available():
+                print("[optimize_model] CUDA is available. Emptying CUDA cache...")
+                torch.cuda.empty_cache()
+                print("[optimize_model] Enabling CUDA graphs via torch._inductor.config.triton.cudagraphs...")
+                torch._inductor.config.triton.cudagraphs = True
+            else:
+                print("[optimize_model] CUDA not available, skipping CUDA-specific optimizations.")
+
+            # 3. Set model to eval mode explicitly
+            print("[optimize_model] Setting model.t3 to eval mode...")
+            model.t3.eval()
+            print("[optimize_model] Setting model.s3 to eval mode...")
+            model.s3.eval()
+
+            # 4. Optimize memory usage
+            print("[optimize_model] Checking for CUDA memory optimization...")
+            if hasattr(torch, 'cuda') and torch.cuda.is_available():
+                print("[optimize_model] Increasing GPU memory fraction to 0.9...")
+                torch.cuda.set_per_process_memory_fraction(0.9)
+            else:
+                print("[optimize_model] CUDA not available, skipping GPU memory fraction adjustment.")
+
+            print("[optimize_model] Optimization complete.")
+            return model
+        
         _initialization_state = InitializationState.INITIALIZING.value
         _initialization_progress = "Validating configuration..."
         
@@ -159,6 +174,7 @@ async def initialize_model():
 
         # t3_to(_model, torch.bfloat16)
         _model = optimize_model(_model)
+        print("Model has been optimized for performance!")
         # _model = quantize_model(_model)
         
         _initialization_state = InitializationState.READY.value

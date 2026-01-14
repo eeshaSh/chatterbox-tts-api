@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Optional, Dict, Any
 from chatterbox.tts import ChatterboxTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+from chatterbox.tts_turbo import ChatterboxTurboTTS
 from app.core.mtl import SUPPORTED_LANGUAGES
 from app.config import Config, detect_device
 
@@ -156,9 +157,13 @@ async def initialize_model():
         
         if use_multilingual:
             print(f"Loading Chatterbox Multilingual TTS model...")
+            # _model = await loop.run_in_executor(
+            #     None, 
+            #     lambda: ChatterboxMultilingualTTS.from_pretrained(device=_device)
+            # )
             _model = await loop.run_in_executor(
                 None, 
-                lambda: ChatterboxMultilingualTTS.from_pretrained(device=_device)
+                lambda: ChatterboxTurboTTS.from_pretrained(device=_device)
             )
             _is_multilingual = True
             _supported_languages = SUPPORTED_LANGUAGES.copy()

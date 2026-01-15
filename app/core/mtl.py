@@ -32,5 +32,5 @@ SUPPORTED_LANGUAGES = {
   "sv": "Swedish",
   "sw": "Swahili",
   "tr": "Turkish",
-  # "zh": "Chinese",
+  "zh": "Chinese",
 }

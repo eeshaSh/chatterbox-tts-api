@@ -8,7 +8,6 @@ from enum import Enum
 from typing import Optional, Dict, Any
 from chatterbox.tts import ChatterboxTTS
 from chatterbox.mtl_tts import ChatterboxMultilingualTTS
-from chatterbox.tts_turbo import ChatterboxTurboTTS
 from app.core.mtl import SUPPORTED_LANGUAGES
 from app.config import Config, detect_device
 import huggingface_hub
@@ -168,10 +167,6 @@ async def initialize_model():
                 lambda: ChatterboxMultilingualTTS.from_pretrained(device=_device)
             )
             huggingface_hub.login(token=HUGGINGFACE_TOKEN)  # Replace with your actual token or use environment variable
-            # _model = await loop.run_in_executor(
-            #     None, 
-            #     lambda: ChatterboxTurboTTS.from_pretrained(device=_device)
-            # )
             _is_multilingual = True
             _supported_languages = SUPPORTED_LANGUAGES.copy()
             print(f"✓ Multilingual model initialized with {len(_supported_languages)} languages")

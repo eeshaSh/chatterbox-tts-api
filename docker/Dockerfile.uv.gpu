@@ -5,6 +5,7 @@ FROM nvidia/cuda:13.0.0-runtime-ubuntu22.04
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV DEBIAN_FRONTEND=noninteractive
+ENV HUGGINGFACE_TOKEN=""
 
 # Install Python 3.11 and system dependencies
 RUN apt-get update && apt-get install -y \
@@ -44,17 +45,18 @@ ENV TORCHINDUCTOR_MAX_BLOCK_SIZE=64
 # RUN uv pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 # TODO put this in a requirements file
 # Install the exact CUDA‑12.4 wheels
-# RUN uv pip install \
-#     torch==2.6.0+cu124 \
-#     torchvision==0.21.0+cu124 \
-#     torchaudio==2.6.0+cu124 \
-#     --index-url https://download.pytorch.org/whl/cu124
+RUN uv pip install \
+    torch==2.6.0+cu124 \
+    torchvision==0.21.0+cu124 \
+    torchaudio==2.6.0+cu124 \
+    --index-url https://download.pytorch.org/whl/cu124
 # Inside your Dockerfile (after you have created/activated a virtual‑env)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git build-essential cmake ninja-build && \
     rm -rf /var/lib/apt/lists/*
-RUN uv pip install --upgrade pip setuptools wheel && \
-    uv pip install torch==2.9.0 torchvision==0.24.0 torchaudio==2.9.0 --index-url https://download.pytorch.org/whl/cu130
+# cudagraphs
+# RUN uv pip install --upgrade pip setuptools wheel && \
+#     uv pip install torch==2.9.0 torchvision==0.24.0 torchaudio==2.9.0 --index-url https://download.pytorch.org/whl/cu130
 RUN uv pip install soundfile
 RUN apt-get update && apt-get install -y libsndfile1
 
@@ -62,6 +64,7 @@ RUN apt-get update && apt-get install -y libsndfile1
 # Transformers ≥ 4.41.0 and Accelerate ≥ 0.30.0 contain the clone‑cache fix
 RUN uv pip install "transformers>=4.41.0" "accelerate>=0.30.0"
 RUN uv pip install "bitsandbytes>=0.43.0"
+RUN uv pip install huggingface-hub
 
 # Install base dependencies first
 RUN uv pip install setuptools fastapi uvicorn[standard] python-dotenv python-multipart requests psutil pydub sse-starlette
@@ -69,9 +72,9 @@ RUN uv pip install setuptools fastapi uvicorn[standard] python-dotenv python-mul
 # Install chatterbox-tts — with the breaking fix (pkuseg package exclusion) 
 # RUN uv pip install git+https://github.com/randombk/chatterbox-vllm.git@master
 # RUN uv pip install git+https://github.com/eeshaSh/chatterbox-faster-mods.git@faster
-# RUN uv pip install git+https://github.com/rsxdalv/chatterbox.git@faster
+RUN uv pip install git+https://github.com/rsxdalv/chatterbox.git@faster
 # RUN uv pip install git+https://github.com/travisvn/chatterbox-multilingual.git@exp
-RUN uv pip install git+https://github.com/resemble-ai/chatterbox.git@master
+# RUN uv pip install git+https://github.com/resemble-ai/chatterbox.git@master
 
 # Copy application code
 COPY app/ ./app/

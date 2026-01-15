@@ -81,19 +81,6 @@ async def initialize_model():
             # print("[optimize_model] Moving model.s3 to bfloat16...")
             # model.s3.to(dtype=torch.bfloat16)  # Add S3 optimization
 
-            bf16_enabled = False
-            if _device == 'cuda' and torch.cuda.is_available():
-                bf16_supported = getattr(torch.cuda, "is_bf16_supported", lambda: False)()
-                if bf16_supported:
-                    print("[optimize_model] Moving entire model to bfloat16...")
-                    # Convert the entire model at once to ensure consistency
-                    model = model.to(dtype=torch.bfloat16)
-                    bf16_enabled = True
-                else:
-                    print("[optimize_model] BF16 not supported on this GPU, keeping float32.")
-            else:
-                print("[optimize_model] CUDA not available or not selected; skipping dtype downcasting.")
-
             # 2. Pre-compile CUDA graphs for common operations
             print("[optimize_model] Checking for CUDA availability...")
             if hasattr(torch, 'cuda') and torch.cuda.is_available():

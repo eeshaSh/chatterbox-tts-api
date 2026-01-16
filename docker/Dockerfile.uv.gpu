@@ -67,11 +67,11 @@ RUN uv pip install "bitsandbytes>=0.43.0"
 RUN uv pip install setuptools fastapi uvicorn[standard] python-dotenv python-multipart requests psutil pydub sse-starlette
 
 # Install chatterbox-tts — with the breaking fix (pkuseg package exclusion) 
-# RUN uv pip install git+https://github.com/randombk/chatterbox-vllm.git@master
+RUN uv pip install git+https://github.com/randombk/chatterbox-vllm.git@master
 # RUN uv pip install git+https://github.com/eeshaSh/chatterbox-faster-mods.git@faster
 # RUN uv pip install git+https://github.com/rsxdalv/chatterbox.git@faster
 # RUN uv pip install git+https://github.com/travisvn/chatterbox-multilingual.git@exp
-RUN uv pip install git+https://github.com/resemble-ai/chatterbox.git@master
+# RUN uv pip install git+https://github.com/resemble-ai/chatterbox.git@master
 
 # Copy application code
 COPY app/ ./app/

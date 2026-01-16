@@ -232,66 +232,54 @@ async def generate_speech_internal(
         
         # Generate audio for each chunk with memory management
         loop = asyncio.get_event_loop()
+
+        # process all chunks at once? idk
+        audio_chunks = model.generate(prompts=chunks, audio_prompt_path=None, language_id = "en") # keeping defaults for now
         
-        for i, chunk in enumerate(chunks):
-            # Update progress
-            current_step = f"Generating audio for chunk {i+1}/{len(chunks)}"
-            update_tts_status(request_id, TTSStatus.GENERATING_AUDIO, current_step, 
-                            current_chunk=i+1, total_chunks=len(chunks))
-            print(f"Generating audio for chunk {i+1}/{len(chunks)}: '{chunk[:50]}{'...' if len(chunk) > 50 else ''}'")
+        # for i, chunk in enumerate(chunks):
+        #     # Update progress
+        #     current_step = f"Generating audio for chunk {i+1}/{len(chunks)}"
+        #     update_tts_status(request_id, TTSStatus.GENERATING_AUDIO, current_step, 
+        #                     current_chunk=i+1, total_chunks=len(chunks))
+        #     print(f"Generating audio for chunk {i+1}/{len(chunks)}: '{chunk[:50]}{'...' if len(chunk) > 50 else ''}'")
             
-            # Use torch.no_grad() to prevent gradient accumulation
-            with torch.no_grad():
-                # Run TTS generation in executor to avoid blocking
-                # Prepare generation kwargs
-                generate_kwargs = {
-                    "text": chunk,
-                    "audio_prompt_path": None, # voice_sample_path,
-                    "exaggeration": exaggeration,
-                    "cfg_weight": cfg_weight,
-                    "temperature": temperature
-                }
+        #     # Use torch.no_grad() to prevent gradient accumulation
+        #     with torch.no_grad():
+        #         # Run TTS generation in executor to avoid blocking
+        #         # Prepare generation kwargs
+        #         generate_kwargs = {
+        #             "text": chunk,
+        #             "audio_prompt_path": None, # voice_sample_path,
+        #             "exaggeration": exaggeration,
+        #             "cfg_weight": cfg_weight,
+        #             "temperature": temperature
+        #         }
                 
-                # Add language_id for multilingual models
-                if is_multilingual():
-                    generate_kwargs["language_id"] = language_id
+        #         # Add language_id for multilingual models
+        #         if is_multilingual():
+        #             generate_kwargs["language_id"] = language_id
                 
-                def _generate_audio():
-                    # torch.compiler.cudagraph_mark_step_begin()
-                    return model.generate(
-                        # t3_params={
-                        #     # "initial_forward_pass_backend": "eager", # slower - default
-                        #     # "initial_forward_pass_backend": "cudagraphS", # speeds up set up
-                        #     "initial_forward_pass_backend": "cudagraphs-manual", # speeds up set up
+        #         def _generate_audio():
+        #             # torch.compiler.cudagraph_mark_step_begin()
+        #             return model.generate(
+        #                 text=chunk,
+        #                 # **generate_kwargs
+        #             )
 
-
-                        #     "generate_token_backend": "cudagraphs-manual", # fastest - default
-                        #     # "generate_token_backend": "cudagraphs",
-                        #     # "generate_token_backend": "eager",
-                        #     # "generate_token_backend": "inductor",
-                        #     # "generate_token_backend": "inductor-strided",
-                        #     # "generate_token_backend": "inductor",
-                        #     # "stride_length": 4, # "strided" options compile <1-2-3-4> iteration steps together, which improves performance by reducing memory copying issues in torch.compile
-                        #     "skip_when_1": True, # skips Top P when it's set to 1.0
-                        #     # "benchmark_t3": True, # Synchronizes CUDA to get the real it/s 
-                        # },
-                        **generate_kwargs
-                    )
-
-                audio_tensor = await loop.run_in_executor(None, _generate_audio)
+        #         audio_tensor = await loop.run_in_executor(None, _generate_audio)
                 
-                # Ensure tensor is on the correct device and detached
-                if hasattr(audio_tensor, 'detach'):
-                    audio_tensor = audio_tensor.detach()
+        #         # Ensure tensor is on the correct device and detached
+        #         if hasattr(audio_tensor, 'detach'):
+        #             audio_tensor = audio_tensor.detach()
                 
-                audio_chunks.append(audio_tensor)
+        #         audio_chunks.append(audio_tensor)
             
-            # Periodic memory cleanup during generation
-            if i > 0 and i % 3 == 0:  # Every 3 chunks
-                import gc
-                gc.collect()
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
+        #     # Periodic memory cleanup during generation
+        #     if i > 0 and i % 3 == 0:  # Every 3 chunks
+        #         import gc
+        #         gc.collect()
+        #         if torch.cuda.is_available():
+        #             torch.cuda.empty_cache()
         
         # Concatenate all chunks with memory management
         if len(audio_chunks) > 1:

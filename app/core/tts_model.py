@@ -6,9 +6,10 @@ import os
 import asyncio
 from enum import Enum
 from typing import Optional, Dict, Any
-from chatterbox.tts import ChatterboxTTS
-from chatterbox.mtl_tts import ChatterboxMultilingualTTS
-from chatterbox.tts_turbo import ChatterboxTurboTTS
+# from chatterbox.tts import ChatterboxTTS
+# from chatterbox.mtl_tts import ChatterboxMultilingualTTS
+# from chatterbox.tts_turbo import ChatterboxTurboTTS
+from chatterbox_vllm.tts import ChatterboxTTS
 from app.core.mtl import SUPPORTED_LANGUAGES
 from app.config import Config, detect_device
 import huggingface_hub
@@ -183,23 +184,23 @@ async def initialize_model():
             huggingface_hub.login(token=HUGGINGFACE_TOKEN)  # Replace with your actual token or use environment variable
             _model = await loop.run_in_executor(
                 None, 
-                lambda: ChatterboxTurboTTS.from_pretrained(device=_device)
+                lambda: ChatterboxTTS.from_pretrained_multilingual(max_batch_size = 1)
             )
-            # _is_multilingual = True
-            # _supported_languages = SUPPORTED_LANGUAGES.copy()
+            _is_multilingual = True
+            _supported_languages = SUPPORTED_LANGUAGES.copy()
             print(f"✓ Multilingual model initialized with {len(_supported_languages)} languages")
-        else:
-            print(f"Loading standard Chatterbox TTS model...")
-            _model = await loop.run_in_executor(
-                None, 
-                lambda: ChatterboxTTS.from_pretrained(device=_device)
-            )
-            _is_multilingual = False
-            _supported_languages = {"en": "English"}  # Standard model only supports English
-            print(f"✓ Standard model initialized (English only)")
+        # else:
+        #     print(f"Loading standard Chatterbox TTS model...")
+        #     _model = await loop.run_in_executor(
+        #         None, 
+        #         lambda: ChatterboxTTS.from_pretrained(device=_device)
+        #     )
+        #     _is_multilingual = False
+        #     _supported_languages = {"en": "English"}  # Standard model only supports English
+        #     print(f"✓ Standard model initialized (English only)")
 
         # t3_to(_model, torch.bfloat16)
-        _model = optimize_model(_model)
+        # _model = optimize_model(_model) # Don't optimize just yet, first get it working
         print("Model has been optimized for performance!")
         # _model = quantize_model(_model)
         

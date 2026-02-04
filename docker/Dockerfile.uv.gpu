@@ -62,7 +62,7 @@ RUN apt-get update && apt-get install -y libsndfile1
 
 
 # Transformers ≥ 4.41.0 and Accelerate ≥ 0.30.0 contain the clone‑cache fix
-RUN uv pip install "transformers>=4.41.0" "accelerate>=0.30.0"
+RUN uv pip install "transformers==4.46.3" "accelerate>=0.30.0"
 RUN uv pip install "bitsandbytes>=0.43.0"
 RUN uv pip install huggingface-hub
 
